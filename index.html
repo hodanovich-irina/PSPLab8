@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Кафедры</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+    <h2>Кафедры</h2>
+    <form name="userForm">
+        <input type="hidden" name="id" value="0" />
+        <div class="form-group">
+            <label for="name">Название кафедры:</label>
+            <input class="form-control" name="name" />
+        </div>
+        <div class="form-group">
+            <label for="fio">ФИО заведующего кафедры:</label>
+            <input class="form-control" name="fio" />
+        </div>
+        <div class="form-group">
+            <label for="count">Число сотрудников:</label>
+            <input class="form-control" name="count" />
+        </div>
+        <div class="form-group">
+            <label for="facult">Название факультета:</label>
+            <input class="form-control" name="facult" />
+        </div>
+        <div class="panel-body">
+            <button type="submit" class="btn btn-sm btn-primary">Сохранить</button>
+            <a id="reset" class="btn btn-sm btn-primary">Сбросить</a>
+        </div>
+    </form>
+    <table class="table table-condensed table-striped table-bordered">
+        <thead><tr><th>Id</th><th>Название кафедры</th><th>ФИО заведующего кафедры</th><th>Число сотрудников</th><th>Название факультета</th><th></th></tr></thead>
+        <tbody>
+        </tbody>
+    </table>
+   
+    <script>
+    // Получение всех пользователей
+        async function getUsers() {
+            // отправляет запрос и получаем ответ
+            const response = await fetch("http://localhost:8080", {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            // если запрос прошел нормально
+            if (response.ok === true) {
+                // получаем данные
+                const users = await response.json();
+                console.log(users);
+                let rows = document.querySelector("tbody"); 
+                users.forEach(user => {
+                    // добавляем полученные элементы в таблицу
+                    rows.append(row(user));
+                });
+            }
+        }
+        // Получение одного пользователя
+        async function getUser(id) {
+            const response = await fetch("http://localhost:8080/" + id, {
+                method: "PATCH",
+                headers: { "Accept": "application/json" },
+                body: JSON.stringify({
+                    id: id
+                })
+            });
+            if (response.ok === true) {
+                const user = await response.json();
+                const form = document.forms["userForm"];
+                form.elements["id"].value = user.id;
+                form.elements["name"].value = user.name;
+                form.elements["fio"].value = user.fio;
+                form.elements["count"].value = user.count;
+                form.elements["facult"].value = user.facult;
+            
+            }
+        }
+        // Добавление пользователя
+        async function createUser(userName, userFio, userCount, userFacult) {
+  
+            var user = JSON.stringify({
+                    name: userName,
+                    fio: userFio,
+                    count: parseInt(userCount, 10),
+                    facult: userFacult
+                });
+
+            console.log(user);
+            console.log("asdfasdf");
+
+            const response = await fetch("http://localhost:8080", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "append":user },
+                body: JSON.stringify({
+                    name: userName,
+                    fio: userFio,
+                    count: parseInt(userCount, 10),
+                    facult: userFacult
+                })
+            });
+            if (response.ok === true) {
+                const user = await response.json();
+                reset();
+                document.querySelector("tbody").append(row(user));
+            }
+        }
+        // Изменение пользователя
+        async function editUser(userId, userName, userFio, userCount, userFacult) {
+            const response = await fetch("http://localhost:8080", {
+                method: "PUT",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id: userId,
+                    name: userName,
+                    fio: userFio,
+                    count: parseInt(userCount, 10),
+                    facult: userFacult
+                })
+            });
+            if (response.ok === true) {
+                const user = await response.json();
+                reset();
+                document.querySelector("tr[data-rowid='" + user.id + "']").replaceWith(row(user));
+            }
+        }
+        // Удаление пользователя
+        async function deleteUser(id) {
+            const response = await fetch("http://localhost:8080", {
+                method: "DELETE",
+                headers: { "Accept": "application/json" },
+                body: JSON.stringify({
+                    id: id
+                })
+            });
+            if (response.ok === true) {
+                const user = await response.json();
+                document.querySelector("tr[data-rowid='" + user.id + "']").remove();
+            }
+        }
+  
+        // сброс формы
+        function reset() {
+            const form = document.forms["userForm"];
+            form.reset();
+            form.elements["id"].value = 0;
+        }
+        // создание строки для таблицы
+        function row(user) {
+  
+            const tr = document.createElement("tr");
+            tr.setAttribute("data-rowid", user.id);
+  
+            const idTd = document.createElement("td");
+            idTd.append(user.id);
+            tr.append(idTd);
+  
+            const nameTd = document.createElement("td");
+            nameTd.append(user.name);
+            tr.append(nameTd);
+  
+            const fioTd = document.createElement("td");
+            fioTd.append(user.fio);
+            tr.append(fioTd);
+
+            const countTd = document.createElement("td");
+            countTd.append(user.count);
+            tr.append(countTd);
+
+            const facultTd = document.createElement("td");
+            facultTd.append(user.facult);
+            tr.append(facultTd);  
+
+            const linksTd = document.createElement("td");
+  
+            const editLink = document.createElement("a");
+            editLink.setAttribute("data-id", user.id);
+            editLink.setAttribute("style", "cursor:pointer;padding:15px;");
+            editLink.append("Изменить");
+            editLink.addEventListener("click", e => {
+  
+                e.preventDefault();
+                getUser(user.id);
+            });
+            linksTd.append(editLink);
+  
+            const removeLink = document.createElement("a");
+            removeLink.setAttribute("data-id", user.id);
+            removeLink.setAttribute("style", "cursor:pointer;padding:15px;");
+            removeLink.append("Удалить");
+            removeLink.addEventListener("click", e => {
+  
+                e.preventDefault();
+                deleteUser(user.id);
+            });
+  
+            linksTd.append(removeLink);
+            tr.appendChild(linksTd);
+  
+            return tr;
+        }
+        // сброс значений формы
+        document.getElementById("reset").addEventListener("click", e => {
+  
+            e.preventDefault();
+            reset();
+        })
+  
+        // отправка формы
+        document.forms["userForm"].addEventListener("submit", e => {
+            e.preventDefault();
+            const form = document.forms["userForm"];
+            const id = form.elements["id"].value;
+            const name = form.elements["name"].value;
+            const fio = form.elements["fio"].value; 
+            const count = form.elements["count"].value; 
+            const facult = form.elements["facult"].value; 
+            
+            console.log(name);
+
+            if (id == 0)
+                createUser(name, fio, count, facult);
+            else
+                editUser(id, name, name, fio, count, facult);
+        });
+  
+        // загрузка пользователей
+        getUsers();
+    </script>
+</body>
+</html>
